@@ -1,8 +1,9 @@
 import AppKit
 import SwiftUI
 import os
+import ServiceManagement
 
-private let log = Logger(subsystem: "com.ak.displaysleep", category: "sleep")
+private let log = Logger(subsystem: "com.codeclawd.screenoff", category: "sleep")
 
 final class MenuPanel: NSPanel {
     var onCancel: (() -> Void)?
@@ -47,7 +48,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let host = FirstMouseHostingView(rootView: SleepPanelView(
             onSleep: { [weak self] in self?.sleepDisplay() },
-            onQuit: { NSApp.terminate(nil) }
+            onQuit: { NSApp.terminate(nil) },
+            opensAtLogin: [.enabled, .requiresApproval].contains(SMAppService.mainApp.status),
+            setOpensAtLogin: { [weak self] on in self?.setOpensAtLogin(on) ?? false }
         ).environment(\.controlActiveState, .key))
         let size = host.fittingSize
 
@@ -114,6 +117,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if let clickMonitor { NSEvent.removeMonitor(clickMonitor) }
         clickMonitor = nil
         NSApp.deactivate()
+    }
+
+    // Returns whether the app now opens at login, so the checkbox shows the real state if
+    // registering fails. If macOS wants the user to approve it, open Login Items for them.
+    private func setOpensAtLogin(_ on: Bool) -> Bool {
+        do {
+            if on { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
+        } catch {
+            log.error("open at login \(on, privacy: .public) failed: \(error.localizedDescription, privacy: .public)")
+        }
+        let status = SMAppService.mainApp.status
+        log.notice("open at login status \(status.rawValue, privacy: .public)")
+        if on, status == .requiresApproval {
+            hidePanel(reason: "opening Login Items for approval")
+            SMAppService.openSystemSettingsLoginItems()
+        }
+        return status == .enabled || status == .requiresApproval
     }
 
     private func sleepDisplay() {

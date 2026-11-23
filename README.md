@@ -1,59 +1,76 @@
-# macOS Sleep Display Menu Bar Button
+<div align="center">
 
-A free, open-source menu bar app that puts your Mac's display to sleep with one click. It runs `pmset displaysleepnow` for you, so you don't have to type it in Terminal or reach for the power button.
+<img src="docs/icon.png" width="128" alt="ScreenOff app icon">
 
-Your Mac keeps running. Downloads continue, music keeps playing, and builds finish. Only the screen goes dark.
+# ScreenOff
 
-## Features
+**Turn off your Mac's screen from the menu bar with one click.**
+Your Mac keeps running: downloads, music and builds carry on while the display sleeps.
 
-- One click on the power icon in the menu bar opens a small panel. Press **Sleep Display** and the screen sleeps.
-- The panel hangs directly under its icon, like the system's own menu bar popouts. It uses native macOS materials, so it follows light and dark mode.
-- It waits until you stop touching the mouse and keyboard (0.3 seconds), because any input wakes a sleeping display.
-- No Dock icon, no windows, no dependencies, no `sudo`.
-- Native Swift and SwiftUI. Under 200 lines of code.
+[**Download ScreenOff for macOS**](https://github.com/codeclawd/screenoff-mac/releases/latest/download/ScreenOff.dmg)
+
+Free and open source · macOS 14 or later · Apple silicon and Intel · under 1 MB
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/panel-dark.png">
+  <img src="docs/panel-light.png" width="320" alt="The ScreenOff panel under its menu bar icon, with a Sleep Display button">
+</picture>
+
+</div>
 
 ## Install
 
-You need macOS 14 or later and the Xcode command line tools (`xcode-select --install`).
+1. Download [ScreenOff.dmg](https://github.com/codeclawd/screenoff-mac/releases/latest/download/ScreenOff.dmg) and open it.
+2. Drag **ScreenOff** into **Applications**.
+3. Open ScreenOff from Applications. A power icon appears in your menu bar.
+
+ScreenOff isn't notarized by Apple, so macOS blocks it the first time you open it. Close that message, go to **System Settings → Privacy & Security**, scroll down and click **Open Anyway**. You only do this once.
+
+If you prefer Terminal, this does the same thing:
 
 ```sh
-git clone https://github.com/codeclawd/macos-sleep-display-menu-bar.git
-cd macos-sleep-display-menu-bar
-./build.sh
-open "build/Display Sleep.app"
+xattr -dr com.apple.quarantine /Applications/ScreenOff.app
 ```
 
-Drag `build/Display Sleep.app` to `/Applications` to keep it. To start it at login, add it under System Settings, General, Login Items.
+## Use it
 
-The build is ad-hoc signed. If macOS blocks the first launch, right-click the app and choose Open.
+Click the power icon, then **Sleep Display**. Move the mouse or press a key to wake the screen.
 
-## Usage
+Tick **Open at Login** in the panel to start ScreenOff with your Mac. Press Esc or click elsewhere to close the panel.
 
-1. Click the power icon in the menu bar.
-2. Press **Sleep Display**.
-3. Move the mouse or press a key to wake the screen.
+## Why it doesn't wake right back up
 
-Press Esc or click anywhere else to close the panel without sleeping. **Quit** is at the bottom.
+Putting a display to sleep with a click is harder than it sounds, because any input wakes it again. ScreenOff handles the two cases that trip up a plain `pmset displaysleepnow`:
 
-If you use a menu bar manager such as Thaw and the icon is hidden, drag it into the visible section. The panel then opens right under it. With the icon hidden, the panel opens at the top right of the screen.
-
-## How it works
-
-`Sources/main.swift` creates a status bar item and a borderless panel. Pressing the button waits for input to go quiet, then launches `/usr/bin/pmset displaysleepnow`. That command needs no administrator rights. `Sources/PanelView.swift` holds the SwiftUI panel.
+- It waits until your hand leaves the mouse and keyboard before it sleeps the screen.
+- A finger resting on a Magic Mouse sends touch events that wake the display without moving the pointer. ScreenOff watches for a few seconds after sleeping and puts the screen back to sleep if nothing you did on purpose woke it.
 
 ## FAQ
 
-**How do I turn off my Mac display without putting the Mac to sleep?**
-Run `pmset displaysleepnow` in Terminal, or use this app to run it from the menu bar.
+**How do I turn off my Mac's display without putting the Mac to sleep?**
+Click **Sleep Display** in ScreenOff. It runs Apple's `pmset displaysleepnow`, which sleeps only the screen. You can also type that command in Terminal.
 
-**Does it need sudo or special permissions?**
-No. `pmset displaysleepnow` works for a normal user, and the app is not sandboxed.
+**Does it need admin rights or special permissions?**
+No. Any user can run `pmset displaysleepnow`. ScreenOff asks for no permissions.
 
-**Why does the screen sleep a moment after I click?**
-Mouse movement wakes a sleeping display. The app waits 0.3 seconds for your hand to settle so the screen stays off. Change the threshold in `sleepOnceInputIsIdle` in `Sources/main.swift`.
+**Will my Mac lock when the screen turns off?**
+That follows your setting in **System Settings → Lock Screen → Require password after screen saver begins or display is turned off**. ScreenOff doesn't change it.
 
-**Will my Mac lock when the display sleeps?**
-That depends on System Settings, Lock Screen, "Require password after screen saver begins or display is turned off". The app does not change it.
+**My menu bar manager hides the icon.**
+Drag the icon into the visible section of Bartender, Ice or Thaw. With the icon hidden, the panel opens at the top right of the screen.
+
+## Build from source
+
+You need the Xcode command line tools (`xcode-select --install`).
+
+```sh
+git clone https://github.com/codeclawd/screenoff-mac.git
+cd screenoff-mac
+./build.sh       # build/ScreenOff.app
+./make-dmg.sh    # build/ScreenOff.dmg
+```
+
+The app is about 250 lines of Swift and SwiftUI with no dependencies. `Sources/main.swift` runs the menu bar item and the sleep logic. `Sources/PanelView.swift` draws the panel.
 
 ## License
 

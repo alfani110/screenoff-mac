@@ -3,6 +3,8 @@ import SwiftUI
 struct SleepPanelView: View {
     var onSleep: () -> Void
     var onQuit: () -> Void
+    @State var opensAtLogin: Bool
+    var setOpensAtLogin: (Bool) -> Bool
 
     @State private var sleeping = false
 
@@ -35,11 +37,20 @@ struct SleepPanelView: View {
 
             Divider()
 
-            Button("Quit", action: onQuit)
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 9)
+            HStack {
+                Toggle("Open at Login", isOn: Binding(
+                    get: { opensAtLogin },
+                    set: { opensAtLogin = setOpensAtLogin($0) }
+                ))
+                .toggleStyle(.checkbox)
+                Spacer()
+                Button("Quit", action: onQuit)
+                    .buttonStyle(.plain)
+            }
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 9)
         }
         .frame(width: 240)
     }
